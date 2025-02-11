@@ -32,10 +32,10 @@ namespace MyApp
             IChatClient azureChatClient = new AzureHTTPChatClient(llmEndpoint, llmDeploymentName, llmApiKey);
             AzureSemanticSearcher semanticSearcher = new AzureSemanticSearcher(searchEndpoint, searchVectorDatabaseName, searchApiKey);
 
-            await GPTAssistent(azureChatClient);
+            //await GPTAssistent(azureChatClient);
 
 			// await RacingAssistent(azureChatClient, semanticSearcher);
-			//await MultiplePeopleConversation(llmEndpoint, llmDeploymentName, llmApiKey);
+			await MultiplePeopleConversation(llmEndpoint, llmDeploymentName, llmApiKey);
 		}
 
 		private static async Task GPTAssistent(IChatClient azureChatClient)
@@ -112,31 +112,32 @@ namespace MyApp
             grandmaClient.UseHistory(true);
             grandsonClient.UseHistory(true);
 
-            string systemPromptGrandma = "You are an 85 year old grandma called Gertrude, and you're talking to your grandson called Charles through WhatsApp. Keep your responses short and to the point. Do not end the conversation.";
-            string systemPromptGrandson = "You are a 15 year old grandson called Charles, and you're talking to your grandma called Gertrude through WhatsApp. Keep your responses short and to the point. Do not end the conversation.";
-
-            await grandmaClient.PromptAsync(systemPromptGrandma, string.Empty);
-            await grandsonClient.PromptAsync(systemPromptGrandson, string.Empty);
+            string systemPromptGrandma = "You are an 85 year old grandma called Gertrude, and you're talking to your grandson called Charles through WhatsApp. Keep your responses to a single sentence. Do not end or lead to an ending of the conversation.";
+            string systemPromptGrandson = "You are a 15 year old grandson called Charles, and you're talking to your grandma called Gertrude through WhatsApp. Keep your responses to a single sentence. Do not end or lead to an ending of the conversation.";
 
             string messageFromGrandma = "Hi, how are you today grandson?";
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Gertrude: " + messageFromGrandma);
-            string responseFromGrandson = await grandsonClient.PromptAsync(messageFromGrandma, string.Empty);
+            string responseFromGrandson = await grandsonClient.PromptAsync(systemPromptGrandson, messageFromGrandma);
             Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine("Charles: " + responseFromGrandson);
 
-            while (true)
+			await Task.Delay(2000);
+
+			while (true)
             {
-                string responseFromGrandma = await grandmaClient.PromptAsync(responseFromGrandson, string.Empty);
+                string responseFromGrandma = await grandmaClient.PromptAsync(systemPromptGrandma, responseFromGrandson);
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("Gertrude: " + responseFromGrandma);
 
-                string responseFromGrandsonNew = await grandsonClient.PromptAsync(responseFromGrandma, string.Empty);
+                string responseFromGrandsonNew = await grandsonClient.PromptAsync(systemPromptGrandson, responseFromGrandma);
                 Console.ForegroundColor = ConsoleColor.Blue;
                 Console.WriteLine("Charles: " + responseFromGrandsonNew);
 
                 responseFromGrandson = responseFromGrandsonNew;
+
+                await Task.Delay(2000);
             }
         }
 
