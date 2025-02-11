@@ -35,7 +35,6 @@ namespace MyApp.Services
                 if (result.Document.ContainsKey("content"))
                 {
                     results.Add(result.Document["content"]?.ToString() ?? string.Empty);
-					Console.WriteLine(result.Document["content"]?.ToString() ?? string.Empty);
                 }
             }
 
