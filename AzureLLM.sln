@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35013.160
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureLLM", "AzureLLM\AzureLLM.csproj", "{988093C9-E48E-4FBD-9069-612021F7F933}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{988093C9-E48E-4FBD-9069-612021F7F933}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{988093C9-E48E-4FBD-9069-612021F7F933}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{988093C9-E48E-4FBD-9069-612021F7F933}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{988093C9-E48E-4FBD-9069-612021F7F933}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EA54747C-EDA4-4861-92A2-CD079573659C}
+	EndGlobalSection
+EndGlobal
