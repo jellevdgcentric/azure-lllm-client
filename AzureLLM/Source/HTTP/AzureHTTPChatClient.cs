@@ -7,10 +7,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using AzureLLM.Source;
 
-namespace MyApp.Services
+namespace AzureLLM.Source.HTTP
 {
     public class AzureHTTPChatClient : IChatClient
-	{
+    {
         private readonly HttpClient _httpClient;
         private readonly Uri _endpoint;
         private readonly string _deploymentName;
@@ -60,9 +60,9 @@ namespace MyApp.Services
             {
                 var firstChoice = choices[0];
                 if (firstChoice.TryGetProperty("message", out var messageElement) && messageElement.TryGetProperty("content", out var contentElement))
-				{
-					reply = contentElement.GetString();
-				}
+                {
+                    reply = contentElement.GetString();
+                }
             }
 
             if (_useHistory)
@@ -93,7 +93,7 @@ namespace MyApp.Services
             using var stream = await response.Content.ReadAsStreamAsync();
             using var reader = new StreamReader(stream);
 
-			StringBuilder entireResponse = new StringBuilder();
+            StringBuilder entireResponse = new StringBuilder();
             while (!reader.EndOfStream)
             {
                 var line = await reader.ReadLineAsync();
@@ -108,22 +108,22 @@ namespace MyApp.Services
                     {
                         break;
                     }
-					using var doc = JsonDocument.Parse(data);
-					var root = doc.RootElement;
-					if (root.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
-					{
-						var firstChoice = choices[0];
-						if (firstChoice.TryGetProperty("delta", out var delta) && delta.TryGetProperty("content", out var contentElement))
-						{
-							var content = contentElement.GetString();
-							if (!string.IsNullOrEmpty(content))
-							{
-								entireResponse.Append(content);
-								onDeltaReceived?.Invoke(content);
-							}
-						}
-					}
-				}
+                    using var doc = JsonDocument.Parse(data);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
+                    {
+                        var firstChoice = choices[0];
+                        if (firstChoice.TryGetProperty("delta", out var delta) && delta.TryGetProperty("content", out var contentElement))
+                        {
+                            var content = contentElement.GetString();
+                            if (!string.IsNullOrEmpty(content))
+                            {
+                                entireResponse.Append(content);
+                                onDeltaReceived?.Invoke(content);
+                            }
+                        }
+                    }
+                }
             }
 
             if (_useHistory)
@@ -136,43 +136,43 @@ namespace MyApp.Services
             return entireResponse.ToString();
         }
 
-		private List<object> BuildMessages(string systemMessage, string message)
-		{
-			var messages = new List<object>();
+        private List<object> BuildMessages(string systemMessage, string message)
+        {
+            var messages = new List<object>();
 
-			if (_useHistory)
-			{
-				foreach (var (role, content) in _history)
-				{
-					messages.Add(new
-					{
-						role,
-						content = new[]
-						{
-							new { type = "text", text = content }
-						}
-					});
-				}
-			}
+            if (_useHistory)
+            {
+                foreach (var (role, content) in _history)
+                {
+                    messages.Add(new
+                    {
+                        role,
+                        content = new[]
+                        {
+                            new { type = "text", text = content }
+                        }
+                    });
+                }
+            }
 
-			messages.Add(new
-			{
-				role = "system",
-				content = new[]
-				{
-					new { type = "text", text = systemMessage }
-				}
-			});
-			messages.Add(new
-			{
-				role = "user",
-				content = new[]
-				{
-					new { type = "text", text = message }
-				}
-			});
+            messages.Add(new
+            {
+                role = "system",
+                content = new[]
+                {
+                    new { type = "text", text = systemMessage }
+                }
+            });
+            messages.Add(new
+            {
+                role = "user",
+                content = new[]
+                {
+                    new { type = "text", text = message }
+                }
+            });
 
-			return messages;
-		}
-	}
+            return messages;
+        }
+    }
 }

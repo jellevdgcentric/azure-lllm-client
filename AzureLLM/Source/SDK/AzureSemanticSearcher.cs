@@ -5,7 +5,7 @@ using Azure;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
 
-namespace MyApp.Services
+namespace AzureLLM.Source.SDK
 {
     public class AzureSemanticSearcher
     {
