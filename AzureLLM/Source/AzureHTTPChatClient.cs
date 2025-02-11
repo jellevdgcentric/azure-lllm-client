@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -15,6 +16,8 @@ namespace MyApp.Services
         private readonly string _deploymentName;
         private readonly string _apiKey;
         private readonly string _apiVersion;
+        private bool _useHistory = false;
+        private readonly List<(string Role, string Content)> _history = new List<(string, string)>();
 
         public AzureHTTPChatClient(Uri endpoint, string deploymentName, string apiKey, string apiVersion = "2023-03-15-preview")
         {
@@ -26,30 +29,23 @@ namespace MyApp.Services
             _httpClient.DefaultRequestHeaders.Add("api-key", _apiKey);
         }
 
+        public void UseHistory(bool useHistory)
+        {
+            _useHistory = useHistory;
+            if (!_useHistory)
+            {
+                _history.Clear();
+            }
+        }
+
         public async Task<string> PromptAsync(string systemMessage, string message)
         {
+            var messages = BuildMessages(systemMessage, message);
+
             var url = new Uri(_endpoint, $"/openai/deployments/{_deploymentName}/chat/completions?api-version={_apiVersion}");
             var requestBody = new
             {
-                messages = new[]
-                {
-                    new
-                    {
-                        role = "system",
-                        content = new[]
-                        {
-                            new { type = "text", text = systemMessage }
-                        }
-                    },
-                    new
-                    {
-                        role = "user",
-                        content = new[]
-                        {
-                            new { type = "text", text = message }
-                        }
-                    }
-                }
+                messages
             };
             var json = JsonSerializer.Serialize(requestBody);
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
@@ -59,41 +55,34 @@ namespace MyApp.Services
             var responseString = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(responseString);
             var root = doc.RootElement;
+            string reply = string.Empty;
             if (root.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
             {
                 var firstChoice = choices[0];
                 if (firstChoice.TryGetProperty("message", out var messageElement) && messageElement.TryGetProperty("content", out var contentElement))
 				{
-					return contentElement.GetString();
+					reply = contentElement.GetString();
 				}
             }
-            return string.Empty;
+
+            if (_useHistory)
+            {
+                _history.Add(("system", systemMessage));
+                _history.Add(("user", message));
+                _history.Add(("assistant", reply));
+            }
+
+            return reply;
         }
 
         public async Task<string> PromptStreamingAsync(string systemMessage, string message, Action<string> onDeltaReceived)
         {
+            var messages = BuildMessages(systemMessage, message);
+
             var url = new Uri(_endpoint, $"/openai/deployments/{_deploymentName}/chat/completions?api-version={_apiVersion}");
             var requestBody = new
             {
-                messages = new[]
-                {
-                    new
-                    {
-                        role = "system",
-                        content = new[]
-                        {
-                            new { type = "text", text = systemMessage }
-                        }
-                    },
-                    new
-                    {
-                        role = "user",
-                        content = new[]
-                        {
-                            new { type = "text", text = message }
-                        }
-                    }
-                },
+                messages,
                 stream = true
             };
             var json = JsonSerializer.Serialize(requestBody);
@@ -137,7 +126,53 @@ namespace MyApp.Services
 				}
             }
 
+            if (_useHistory)
+            {
+                _history.Add(("system", systemMessage));
+                _history.Add(("user", message));
+                _history.Add(("assistant", entireResponse.ToString()));
+            }
+
             return entireResponse.ToString();
         }
-    }
+
+		private List<object> BuildMessages(string systemMessage, string message)
+		{
+			var messages = new List<object>();
+
+			if (_useHistory)
+			{
+				foreach (var (role, content) in _history)
+				{
+					messages.Add(new
+					{
+						role,
+						content = new[]
+						{
+							new { type = "text", text = content }
+						}
+					});
+				}
+			}
+
+			messages.Add(new
+			{
+				role = "system",
+				content = new[]
+				{
+					new { type = "text", text = systemMessage }
+				}
+			});
+			messages.Add(new
+			{
+				role = "user",
+				content = new[]
+				{
+					new { type = "text", text = message }
+				}
+			});
+
+			return messages;
+		}
+	}
 }

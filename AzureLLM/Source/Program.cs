@@ -11,30 +11,37 @@ namespace MyApp
         private static bool UseStreaming = true;
 
         static async Task Main(string[] args)
-        {
-            var config = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .Build();
+		{
+			var config = new ConfigurationBuilder()
+				.SetBasePath(AppContext.BaseDirectory)
+				.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+				.Build();
 
-            var azureLLMConfig = config.GetSection("AzureLLM");
-            var azureSearchConfig = config.GetSection("AzureSearch");
+			var azureLLMConfig = config.GetSection("AzureLLM");
+			var azureSearchConfig = config.GetSection("AzureSearch");
 
-            Uri llmEndpoint = new Uri(azureLLMConfig["Endpoint"]);
-            string deploymentName = azureLLMConfig["DeploymentName"];
-            string llmApiKey = azureLLMConfig["ApiKey"];
+			Uri llmEndpoint = new Uri(azureLLMConfig["Endpoint"]);
+			string llmDeploymentName = azureLLMConfig["DeploymentName"];
+			string llmApiKey = azureLLMConfig["ApiKey"];
 
-            Uri searchEndpoint = new Uri(azureSearchConfig["Endpoint"]);
-            string vectorDatabaseName = azureSearchConfig["VectorDatabaseName"];
-            string searchApiKey = azureSearchConfig["ApiKey"];
+			Uri searchEndpoint = new Uri(azureSearchConfig["Endpoint"]);
+			string searchVectorDatabaseName = azureSearchConfig["VectorDatabaseName"];
+			string searchApiKey = azureSearchConfig["ApiKey"];
 
-            IChatClient azureChatClient = new AzureOpenAIChatClient(llmEndpoint, deploymentName, llmApiKey);
-            AzureSemanticSearcher semanticSearcher = new AzureSemanticSearcher(searchEndpoint, vectorDatabaseName, searchApiKey);
+			IChatClient azureChatClient = new AzureOpenAIChatClient(llmEndpoint, llmDeploymentName, llmApiKey);
+			AzureSemanticSearcher semanticSearcher = new AzureSemanticSearcher(searchEndpoint, searchVectorDatabaseName, searchApiKey);
 
-            Console.WriteLine("Enter your messages below. Type 'exit' to quit.");
+			await RacingAssistent(azureChatClient, semanticSearcher);
+		}
 
-            while (true)
+		private static async Task RacingAssistent(IChatClient azureChatClient, AzureSemanticSearcher semanticSearcher)
+		{
+			Console.ForegroundColor = ConsoleColor.Green;
+			Console.WriteLine("Hello I am your iRacing assistent for today. Do you have any questions?");
+
+			while (true)
 			{
+				Console.ForegroundColor = ConsoleColor.White;
 				Console.Write("You: ");
 				string? userInput = Console.ReadLine();
 
@@ -54,6 +61,7 @@ namespace MyApp
 					continue;
 				}
 
+				Console.ForegroundColor = ConsoleColor.Green;
 				await PromptWithSemanticSearch(azureChatClient, semanticSearcher, userInput);
 			}
 		}
