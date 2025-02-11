@@ -35,7 +35,7 @@ namespace MyApp.Services
 			return string.Concat(content.Select(part => part.Text));
 		}
 
-		public async Task PromptStreamingAsync(string systemMessage, string message, Action<string> onDeltaReceived)
+		public async Task<string> PromptStreamingAsync(string systemMessage, string message, Action<string> onDeltaReceived)
 		{
 			var messages = new List<ChatMessage>
 			{
@@ -43,13 +43,17 @@ namespace MyApp.Services
 				new UserChatMessage(message)
 			};
 
+			StringBuilder entireResponse = new StringBuilder();
 			await foreach (StreamingChatCompletionUpdate update in _chatClient.CompleteChatStreamingAsync(messages))
 			{
 				foreach (ChatMessageContentPart part in update.ContentUpdate)
 				{
-					onDeltaReceived(part.Text);
+					entireResponse.Append(part.Text);
+					onDeltaReceived?.Invoke(part.Text);
 				}
 			}
+
+			return entireResponse.ToString();
 		}
 	}
 }

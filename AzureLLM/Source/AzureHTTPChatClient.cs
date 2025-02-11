@@ -70,7 +70,7 @@ namespace MyApp.Services
             return string.Empty;
         }
 
-        public async Task PromptStreamingAsync(string systemMessage, string message, Action<string> onDeltaReceived)
+        public async Task<string> PromptStreamingAsync(string systemMessage, string message, Action<string> onDeltaReceived)
         {
             var url = new Uri(_endpoint, $"/openai/deployments/{_deploymentName}/chat/completions?api-version={_apiVersion}");
             var requestBody = new
@@ -103,6 +103,8 @@ namespace MyApp.Services
             response.EnsureSuccessStatusCode();
             using var stream = await response.Content.ReadAsStreamAsync();
             using var reader = new StreamReader(stream);
+
+			StringBuilder entireResponse = new StringBuilder();
             while (!reader.EndOfStream)
             {
                 var line = await reader.ReadLineAsync();
@@ -127,12 +129,15 @@ namespace MyApp.Services
 							var content = contentElement.GetString();
 							if (!string.IsNullOrEmpty(content))
 							{
-								onDeltaReceived(content);
+								entireResponse.Append(content);
+								onDeltaReceived?.Invoke(content);
 							}
 						}
 					}
 				}
             }
+
+            return entireResponse.ToString();
         }
     }
 }

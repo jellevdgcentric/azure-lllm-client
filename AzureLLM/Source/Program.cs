@@ -80,12 +80,15 @@ namespace MyApp
 		private static async Task PromptWithSemanticSearch(IChatClient azureChatClient, AzureSemanticSearcher semanticSearcher, string userInput)
 		{
 			List<string> semanticSearchResult = await semanticSearcher.SearchAsync(userInput);
-			string serializedResult = "----- Semantic search result: " + string.Join(", ", semanticSearchResult) + "-----";
+			string semanticSerializedResult = "----- Semantic search result: " + string.Join(", ", semanticSearchResult) + "-----\n\n";
+			File.WriteAllText("STEP1.txt", semanticSerializedResult);
+
+			string promptUserWithSemanticSearch = semanticSerializedResult + userInput;
 
 			if (UseStreaming)
 			{
 				Console.Write("AI: ");
-				await azureChatClient.PromptStreamingAsync(string.Empty, userInput + serializedResult, (response) =>
+				await azureChatClient.PromptStreamingAsync(string.Empty, userInput + semanticSerializedResult, (response) =>
 				{
 					Console.Write(response);
 				});
@@ -94,7 +97,7 @@ namespace MyApp
 			else
 			{
 				Console.Write("AI: ");
-				string response = await azureChatClient.PromptAsync(string.Empty, userInput + serializedResult);
+				string response = await azureChatClient.PromptAsync(string.Empty, userInput + semanticSerializedResult);
 				Console.WriteLine(response);
 			}
 		}

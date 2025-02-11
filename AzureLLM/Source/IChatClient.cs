@@ -9,6 +9,6 @@ namespace AzureLLM.Source
 	public interface IChatClient
 	{
 		public Task<string> PromptAsync(string systemMessage, string message);
-		public Task PromptStreamingAsync(string systemMessage, string message, Action<string> onDeltaReceived);
+		public Task<string> PromptStreamingAsync(string systemMessage, string message, Action<string> onDeltaReceived);
 	}
 }
