@@ -31,47 +31,72 @@ namespace MyApp
             IChatClient azureChatClient = new AzureOpenAIChatClient(llmEndpoint, deploymentName, llmApiKey);
             AzureSemanticSearcher semanticSearcher = new AzureSemanticSearcher(searchEndpoint, vectorDatabaseName, searchApiKey);
 
-            await semanticSearcher.SearchAsync("ilab");
-
             Console.WriteLine("Enter your messages below. Type 'exit' to quit.");
 
             while (true)
-            {
-                Console.Write("You: ");
-                string? userInput = Console.ReadLine();
+			{
+				Console.Write("You: ");
+				string? userInput = Console.ReadLine();
 
-                if (userInput == null || userInput.Trim().ToLower() == "exit")
-                {
-                    break;
-                }
+				if (userInput == null || userInput.Trim().ToLower() == "exit")
+				{
+					break;
+				}
 
-                if (userInput.Trim() == string.Empty)
-                {
-                    continue;
-                }
+				if (userInput.Trim() == string.Empty)
+				{
+					continue;
+				}
 
-                if (userInput.Trim().ToLower() == "clear")
-                {
-                    Console.Clear();
-                    continue;
-                }
+				if (userInput.Trim().ToLower() == "clear")
+				{
+					Console.Clear();
+					continue;
+				}
 
-                if (UseStreaming)
-                {
-                    Console.Write("AI: ");
-                    await azureChatClient.PromptStreamingAsync(userInput, (response) =>
-                    {
-                        Console.Write(response);
-                    });
-                    Console.WriteLine();
-                }
-                else
-                {
-                    Console.Write("AI: ");
-                    string response = await azureChatClient.PromptAsync(userInput);
-                    Console.WriteLine(response);
-                }
-            }
-        }
-    }
+				await PromptWithSemanticSearch(azureChatClient, semanticSearcher, userInput);
+			}
+		}
+
+		private static async Task Prompt(IChatClient azureChatClient, string userInput)
+		{
+			if (UseStreaming)
+			{
+				Console.Write("AI: ");
+				await azureChatClient.PromptStreamingAsync(string.Empty, userInput, (response) =>
+				{
+					Console.Write(response);
+				});
+				Console.WriteLine();
+			}
+			else
+			{
+				Console.Write("AI: ");
+				string response = await azureChatClient.PromptAsync(string.Empty, userInput);
+				Console.WriteLine(response);
+			}
+		}
+
+		private static async Task PromptWithSemanticSearch(IChatClient azureChatClient, AzureSemanticSearcher semanticSearcher, string userInput)
+		{
+			List<string> semanticSearchResult = await semanticSearcher.SearchAsync(userInput);
+			string serializedResult = "----- Semantic search result: " + string.Join(", ", semanticSearchResult) + "-----";
+
+			if (UseStreaming)
+			{
+				Console.Write("AI: ");
+				await azureChatClient.PromptStreamingAsync(string.Empty, userInput + serializedResult, (response) =>
+				{
+					Console.Write(response);
+				});
+				Console.WriteLine();
+			}
+			else
+			{
+				Console.Write("AI: ");
+				string response = await azureChatClient.PromptAsync(string.Empty, userInput + serializedResult);
+				Console.WriteLine(response);
+			}
+		}
+	}
 }
