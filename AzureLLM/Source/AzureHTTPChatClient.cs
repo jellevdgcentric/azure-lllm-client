@@ -26,13 +26,21 @@ namespace MyApp.Services
             _httpClient.DefaultRequestHeaders.Add("api-key", _apiKey);
         }
 
-        public async Task<string> PromptAsync(string message)
+        public async Task<string> PromptAsync(string systemMessage, string message)
         {
             var url = new Uri(_endpoint, $"/openai/deployments/{_deploymentName}/chat/completions?api-version={_apiVersion}");
             var requestBody = new
             {
                 messages = new[]
                 {
+                    new
+                    {
+                        role = "system",
+                        content = new[]
+                        {
+                            new { type = "text", text = systemMessage }
+                        }
+                    },
                     new
                     {
                         role = "user",
@@ -62,13 +70,21 @@ namespace MyApp.Services
             return string.Empty;
         }
 
-        public async Task PromptStreamingAsync(string message, Action<string> onDeltaReceived)
+        public async Task PromptStreamingAsync(string systemMessage, string message, Action<string> onDeltaReceived)
         {
             var url = new Uri(_endpoint, $"/openai/deployments/{_deploymentName}/chat/completions?api-version={_apiVersion}");
             var requestBody = new
             {
                 messages = new[]
                 {
+                    new
+                    {
+                        role = "system",
+                        content = new[]
+                        {
+                            new { type = "text", text = systemMessage }
+                        }
+                    },
                     new
                     {
                         role = "user",

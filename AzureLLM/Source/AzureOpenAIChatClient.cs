@@ -22,10 +22,11 @@ namespace MyApp.Services
 			_chatClient = azureOpenAIClient.GetChatClient(deploymentName);
 		}
 
-		public async Task<string> PromptAsync(string message)
+		public async Task<string> PromptAsync(string systemMessage, string message)
 		{
 			var messages = new List<ChatMessage>
 			{
+				new SystemChatMessage(systemMessage),
 				new UserChatMessage(message)
 			};
 
@@ -34,10 +35,11 @@ namespace MyApp.Services
 			return string.Concat(content.Select(part => part.Text));
 		}
 
-		public async Task PromptStreamingAsync(string message, Action<string> onDeltaReceived)
+		public async Task PromptStreamingAsync(string systemMessage, string message, Action<string> onDeltaReceived)
 		{
 			var messages = new List<ChatMessage>
 			{
+				new SystemChatMessage(systemMessage),
 				new UserChatMessage(message)
 			};
 
