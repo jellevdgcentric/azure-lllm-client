@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AzureLLM.Source;
 
 namespace AzureLLM.Source.HTTP
 {
@@ -29,13 +28,22 @@ namespace AzureLLM.Source.HTTP
             _httpClient.DefaultRequestHeaders.Add("api-key", _apiKey);
         }
 
-        public void UseHistory(bool useHistory)
+        public void UseHistory(bool useHistory, List<(string Role, string Content)> history)
         {
-            _useHistory = useHistory;
-            if (!_useHistory)
-            {
-                _history.Clear();
-            }
+			if (useHistory == _useHistory && history == null)
+			{
+				return;
+			}
+
+			_useHistory = useHistory;
+			_history.Clear();
+			if (history != null)
+			{
+				foreach (var message in history)
+				{
+					_history.Add((message.Role, message.Content));
+				}
+			}
         }
 
         public async Task<string> PromptAsync(string systemMessage, string message)

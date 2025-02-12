@@ -7,7 +7,6 @@ using Azure.AI.OpenAI;
 using OpenAI.Chat;
 using System.Linq;
 using System.ClientModel;
-using AzureLLM.Source;
 
 namespace AzureLLM.Source.SDK
 {
@@ -24,16 +23,25 @@ namespace AzureLLM.Source.SDK
             _chatClient = azureOpenAIClient.GetChatClient(deploymentName);
         }
 
-        public void UseHistory(bool useHistory)
-        {
-            _useHistory = useHistory;
-            if (!_useHistory)
+		public void UseHistory(bool useHistory, List<(string Role, string Content)> history = null)
+		{
+            if (useHistory == _useHistory && history == null)
             {
-                _history.Clear();
+                return;
             }
-        }
 
-        public async Task<string> PromptAsync(string systemMessage, string message)
+			_useHistory = useHistory;
+			_history.Clear();
+			if (history != null)
+			{
+				foreach (var (role, content) in history)
+				{
+					_history.Add((role, content));
+				}
+			}
+		}
+
+		public async Task<string> PromptAsync(string systemMessage, string message)
         {
             var messages = BuildMessages(systemMessage, message);
 
@@ -43,7 +51,6 @@ namespace AzureLLM.Source.SDK
 
             if (_useHistory)
             {
-                _history.Add(("system", systemMessage));
                 _history.Add(("user", message));
                 _history.Add(("assistant", reply));
             }
@@ -67,7 +74,6 @@ namespace AzureLLM.Source.SDK
 
             if (_useHistory)
             {
-                _history.Add(("system", systemMessage));
                 _history.Add(("user", message));
                 _history.Add(("assistant", entireResponse.ToString()));
             }
@@ -92,7 +98,11 @@ namespace AzureLLM.Source.SDK
                 }
             }
 
-            messages.Add(new SystemChatMessage(systemMessage));
+            if (!string.IsNullOrEmpty(systemMessage))
+            {
+                messages.Add(new SystemChatMessage(systemMessage));
+            }
+
             messages.Add(new UserChatMessage(message));
 
             return messages;

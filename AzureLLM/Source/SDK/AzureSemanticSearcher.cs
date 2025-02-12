@@ -7,8 +7,8 @@ using Azure.Search.Documents.Models;
 
 namespace AzureLLM.Source.SDK
 {
-    public class AzureSemanticSearcher
-    {
+    public class AzureSemanticSearcher : ISemanticSearcher
+	{
         private readonly SearchClient _searchClient;
 
         public AzureSemanticSearcher(Uri endpoint, string indexName, string apiKey)
@@ -17,13 +17,12 @@ namespace AzureLLM.Source.SDK
             _searchClient = new SearchClient(endpoint, indexName, credential);
         }
 
-        public async Task<List<string>> SearchAsync(string query)
+        public async Task<List<string>> SearchAsync(string query, int maxResults = 10)
         {
             var options = new SearchOptions
             {
-                IncludeTotalCount = true,
-                Size = 10
-            };
+                Size = maxResults
+			};
             options.Select.Add("content");
 
             var results = new List<string>();
