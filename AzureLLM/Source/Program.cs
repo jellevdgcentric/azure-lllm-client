@@ -23,18 +23,20 @@ namespace MyApp
             var azureLLMConfig = config.GetSection("AzureLLM");
             var azureSearchConfig = config.GetSection("AzureSearch");
 
-            Uri llmEndpoint = new Uri(azureLLMConfig["Endpoint"]);
+			// -- Chat client -- //
+			Uri llmEndpoint = new Uri(azureLLMConfig["Endpoint"]);
             string llmDeploymentName = azureLLMConfig["DeploymentName"];
             string llmApiKey = azureLLMConfig["ApiKey"];
+			IChatClient azureChatClient = new AzureChatClient(llmEndpoint, llmDeploymentName, llmApiKey);
+			azureChatClient.UseHistory(true);
 
-            Uri searchEndpoint = new Uri(azureSearchConfig["Endpoint"]);
+            // -- Semantic search -- //
+			Uri searchEndpoint = new Uri(azureSearchConfig["Endpoint"]);
             string searchVectorDatabaseName = azureSearchConfig["VectorDatabaseName"];
             string searchApiKey = azureSearchConfig["ApiKey"];
-
-            IChatClient azureChatClient = new AzureChatClient(llmEndpoint, llmDeploymentName, llmApiKey);
-            azureChatClient.UseHistory(true);
             ISemanticSearcher semanticSearcher = new AzureSemanticSearcher(searchEndpoint, searchVectorDatabaseName, searchApiKey);
 
+            // -- Demo -- //
             await GPTAssistant(azureChatClient);
 
             //await RacingAssistant(azureChatClient, semanticSearcher);
