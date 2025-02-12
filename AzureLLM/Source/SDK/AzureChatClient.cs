@@ -7,6 +7,7 @@ using Azure.AI.OpenAI;
 using OpenAI.Chat;
 using System.Linq;
 using System.ClientModel;
+using AzureLLM.Source;
 
 namespace AzureLLM.Source.SDK
 {
@@ -41,26 +42,26 @@ namespace AzureLLM.Source.SDK
 			}
 		}
 
-		public async Task<string> PromptAsync(string systemMessage, string message)
+		public async Task<string> PromptAsync(string systemPrompt, string userPrompt)
         {
-            var messages = BuildMessages(systemMessage, message);
+            var prompts = BuildPromptWithHistory(systemPrompt, userPrompt);
 
-            ClientResult<ChatCompletion> response = await _chatClient.CompleteChatAsync(messages);
+            ClientResult<ChatCompletion> response = await _chatClient.CompleteChatAsync(prompts);
             ChatMessageContent contentResult = response.Value.Content;
             string reply = string.Concat(contentResult.Select(part => part.Text));
 
             if (_useHistory)
             {
-                _history.Add(("user", message));
-                _history.Add(("assistant", reply));
+                _history.Add((Roles.USER_ROLE, userPrompt));
+                _history.Add((Roles.ASSISTANT_ROLE, reply));
             }
 
             return reply;
         }
 
-        public async Task<string> PromptStreamingAsync(string systemMessage, string message, Action<string> onDeltaReceived)
+        public async Task<string> PromptStreamingAsync(string systemPrompt, string userPrompt, Action<string> onDeltaReceived)
         {
-            var messages = BuildMessages(systemMessage, message);
+            var messages = BuildPromptWithHistory(systemPrompt, userPrompt);
 
             StringBuilder entireResponse = new StringBuilder();
             await foreach (StreamingChatCompletionUpdate update in _chatClient.CompleteChatStreamingAsync(messages))
@@ -74,14 +75,14 @@ namespace AzureLLM.Source.SDK
 
             if (_useHistory)
             {
-                _history.Add(("user", message));
-                _history.Add(("assistant", entireResponse.ToString()));
+                _history.Add((Roles.USER_ROLE, userPrompt));
+                _history.Add((Roles.ASSISTANT_ROLE, entireResponse.ToString()));
             }
 
             return entireResponse.ToString();
         }
 
-        private List<ChatMessage> BuildMessages(string systemMessage, string message)
+        private List<ChatMessage> BuildPromptWithHistory(string systemPrompt, string message)
         {
             var messages = new List<ChatMessage>();
 
@@ -89,18 +90,18 @@ namespace AzureLLM.Source.SDK
             {
                 foreach (var (role, content) in _history)
                 {
-                    if (role == "system")
+                    if (role == Roles.SYSTEM_ROLE)
                         messages.Add(new SystemChatMessage(content));
-                    else if (role == "user")
+                    else if (role == Roles.USER_ROLE)
                         messages.Add(new UserChatMessage(content));
-                    else if (role == "assistant")
+                    else if (role == Roles.ASSISTANT_ROLE)
                         messages.Add(new AssistantChatMessage(content));
                 }
             }
 
-            if (!string.IsNullOrEmpty(systemMessage))
+            if (!string.IsNullOrEmpty(systemPrompt))
             {
-                messages.Add(new SystemChatMessage(systemMessage));
+                messages.Add(new SystemChatMessage(systemPrompt));
             }
 
             messages.Add(new UserChatMessage(message));

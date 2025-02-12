@@ -73,23 +73,23 @@ namespace MyApp
                 }
 
                 Console.ForegroundColor = ConsoleColor.DarkBlue;
-                await Prompt(azureChatClient, "You are a GPT assistant and try to answer the user its questions.", userInput);
+                await Prompt(azureChatClient, "You are a GPT assistant and try to help the user.", userInput);
             }
         }
 
-        private static async Task<string> Prompt(IChatClient azureChatClient, string systemPrompt, string userInput)
+        private static async Task<string> Prompt(IChatClient azureChatClient, string systemPrompt, string userPrompt)
         {
             if (UseStreaming)
             {
                 Console.Write("AI: ");
-                string response = await azureChatClient.PromptStreamingAsync(string.Empty, userInput, Console.Write);
+                string response = await azureChatClient.PromptStreamingAsync(string.Empty, userPrompt, Console.Write);
                 Console.WriteLine();
                 return response;
             }
             else
             {
                 Console.Write("AI: ");
-                string response = await azureChatClient.PromptAsync(string.Empty, userInput);
+                string response = await azureChatClient.PromptAsync(string.Empty, userPrompt);
                 Console.WriteLine(response);
                 return response;
             }
@@ -103,6 +103,9 @@ namespace MyApp
                 "\n\n### User Query:\n" +
                 userInput +
                 "\n\nBased on the above information, provide a concise and relevant answer to the user's query. Respond in the language based on the user query.";
+
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.WriteLine(formattedSearchResults);
 
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             if (UseStreaming)

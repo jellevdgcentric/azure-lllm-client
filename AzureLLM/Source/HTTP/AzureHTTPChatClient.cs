@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using AzureLLM.Source;
 
 namespace AzureLLM.Source.HTTP
 {
@@ -46,9 +47,9 @@ namespace AzureLLM.Source.HTTP
 			}
         }
 
-        public async Task<string> PromptAsync(string systemMessage, string message)
+        public async Task<string> PromptAsync(string systemPrompt, string userPrompt)
         {
-            var messages = BuildMessages(systemMessage, message);
+            var messages = BuildMessages(systemPrompt, userPrompt);
 
             var url = new Uri(_endpoint, $"/openai/deployments/{_deploymentName}/chat/completions?api-version={_apiVersion}");
             var requestBody = new
@@ -75,17 +76,16 @@ namespace AzureLLM.Source.HTTP
 
             if (_useHistory)
             {
-                _history.Add(("system", systemMessage));
-                _history.Add(("user", message));
-                _history.Add(("assistant", reply));
+                _history.Add((Roles.USER_ROLE, userPrompt));
+                _history.Add((Roles.ASSISTANT_ROLE, reply));
             }
 
             return reply;
         }
 
-        public async Task<string> PromptStreamingAsync(string systemMessage, string message, Action<string> onDeltaReceived)
+        public async Task<string> PromptStreamingAsync(string systemPrompt, string userPrompt, Action<string> onDeltaReceived)
         {
-            var messages = BuildMessages(systemMessage, message);
+            var messages = BuildMessages(systemPrompt, userPrompt);
 
             var url = new Uri(_endpoint, $"/openai/deployments/{_deploymentName}/chat/completions?api-version={_apiVersion}");
             var requestBody = new
@@ -136,15 +136,14 @@ namespace AzureLLM.Source.HTTP
 
             if (_useHistory)
             {
-                _history.Add(("system", systemMessage));
-                _history.Add(("user", message));
-                _history.Add(("assistant", entireResponse.ToString()));
+                _history.Add((Roles.USER_ROLE, userPrompt));
+                _history.Add((Roles.ASSISTANT_ROLE, entireResponse.ToString()));
             }
 
             return entireResponse.ToString();
         }
 
-        private List<object> BuildMessages(string systemMessage, string message)
+        private List<object> BuildMessages(string systemPrompt, string userPrompt)
         {
             var messages = new List<object>();
 
@@ -165,18 +164,18 @@ namespace AzureLLM.Source.HTTP
 
             messages.Add(new
             {
-                role = "system",
+                role = Roles.SYSTEM_ROLE,
                 content = new[]
                 {
-                    new { type = "text", text = systemMessage }
+                    new { type = "text", text = systemPrompt }
                 }
             });
             messages.Add(new
             {
-                role = "user",
+                role = Roles.USER_ROLE,
                 content = new[]
                 {
-                    new { type = "text", text = message }
+                    new { type = "text", text = userPrompt }
                 }
             });
 
